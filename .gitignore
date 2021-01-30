@@ -45,7 +45,10 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+*.txt
+
 .tmp_versions/
+.vscode/
 modules.order
 Module.symvers
 Mkfile.old
