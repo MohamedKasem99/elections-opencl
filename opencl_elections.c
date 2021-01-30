@@ -77,6 +77,7 @@ int main(int argc, char **argv)
     size_t global; // global domain size for our calculation
     size_t local;  // local domain size for our calculation
 
+    cl_platform_id cpPlatform;        // OpenCL platform
     cl_device_id device_id;    // compute device id
     cl_context context;        // compute context
     cl_command_queue commands; // compute command queue
@@ -116,7 +117,14 @@ int main(int argc, char **argv)
 
     // Connect to a compute device
     //
-    err = clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
+    // Bind to platform
+    err = clGetPlatformIDs(1, &cpPlatform, NULL);
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to bind to platform! \n");
+        return EXIT_FAILURE;
+    } 
+    err = clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to create a device group!\n");
