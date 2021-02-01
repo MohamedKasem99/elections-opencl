@@ -6,7 +6,7 @@ Distributed election program using opencl
 * Mohamed Mostafa 201600236
 
 ## Task 1 input generation
-* First, at rank zero, the user is prompted to enter the number of candidates and voters.
+* First, the user is prompted to enter the number of candidates and voters.
 * Then, create an array called `votes`, which has the values from 1 to number of candidates.
 * `shuffle` function shuffles the order of values. This ensures that a single voter would never have repeated candidate numbers in his/her votes.
 * To ensure that shuffle creates different values for each process, and different values everytime a user runs the program, we used `srand(time(0))`
