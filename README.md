@@ -1,51 +1,37 @@
 # elections-opencl
-Simple tutorial on how to use opencl to simulate an election process.
+Distributed election program using opencl
 
-#### Project Statement
-The results of any elections may take weeks to be announced. But we want to quickly announce
-which candidate will win. So given the voters’ preferences lists, you need to write a parallel
-program to announce which candidate will win and in which round.
+# Team:
+* Mohamed Kasem 201601144
+* Mohamed Mostafa 201600236
 
-#### Details
+## Task 1 input generation
+* First, at rank zero, the user is prompted to enter the number of candidates and voters.
+* Then, create an array called `votes`, which has the values from 1 to number of candidates.
+* `shuffle` function shuffles the order of values. This ensures that a single voter would never have repeated candidate numbers in his/her votes.
+* To ensure that shuffle creates different values for each process, and different values everytime a user runs the program, we used `srand(time(0))`
+* The results are then serially written into a file.
 
-When it is time to vote for a new president and as a voter you are really excited about that. You
-know that the final results may take weeks to be announced, while you can't really wait to see the
-results. Suppose the preferences list is available for every voter. Each voter sorted out all
-candidates starting by his most preferred candidate and ending with his least preferred one.
-When voting, a voter votes for the candidate who comes first in his preferences list. For example,
-if there are 5 candidates (numbered 1 to 5), and the preferences list for one voter is [3, 2, 5, 1, 4]
-then voter will give the highest vote for candidate 3 and the lowest vote for candidate 4.
-**The rules for the election process are as follows:**
-
-1. There are C candidates (numbered from 1 to C), and V voters.
-2. The election process consists of up to 2 rounds. All candidates compete in the first round. If a
-candidate receives more than 50% of the votes, he wins, otherwise another round takes place,
-in which only the top 2 candidates compete for the presidency, the candidate who receives
-more votes than his opponent wins and becomes the new president.
-3. The voters' preferences are the same in both rounds so if the preference list [1 2 3 4 5] in the
-first round and the second round become between candidate 1 and 2 so the preferences is the
-same [1 2].
-Given the preferences lists, you need to write a parallel program to announce which candidate
-will win and in which round.
-
-**For example:** If the input is:
-3 5 // number of candidates & number of voters
-1 2 3 // voter 1 preference list
-1 2 3 // voter 2 preference list
-2 1 3 // voter 3 preference list
-2 3 1 // voter 4 preference list
-3 2 1 // voter 5 preference list
-Then the output will be 2 2 // candidate 2 wins in round 2
-
-**Explanation**: You should print the output something like this:
-Candidate [1] got 2/5 which is 40%
-Candidate [2] got 2/5 which is 40%
-Candidate [3] got 1/5 which is 20%
-So second round will take place between candidates 1 and 2 with same preferences
-1 2 // voter 1 preference list
-1 2 // voter 2 preference list
-2 1 // voter 3 preference list
-2 1 // voter 4 preference list
-2 1 // voter 5 preference list
-Candidate [1] got 2/5 which is 40%
-Candidate [2] got 3/5 which is 60% so candidate 2 wins in round 2
+## Task 2 result calculation
+1. Preperations before execution
+    * The kernels are written in another file called `red_kernel.cl` and read into the host program.
+    * The program uses the first gpu available to it.
+    * The workgroups are set to the maximum size it can be.
+    * The number of global work items are set to be the nearest multiple of local work item size in a workgroup so that each work item deals with one voter.
+    * The host intializes memory to hold the votes from the input file which is allocated to the global memory for all workgroups to access.
+    * A result array is intialized in the global memory.
+    * A local result array is initialized in the local memory of each workgroup.
+2. Read the file
+    * The file is read into the global memory where all workgroups can access it.
+3. First round
+    * Each work item gets its voter's first pick
+    * Increments the local result array using `work_group_reduce_add`, so that each workgroup has a local array that holds the workgroup's total votes for each candidate.
+    * All workgroups then atomically add the result from the local result array into the global result array.
+    * The percentages is then calculated at the host.
+    * If any candidate gets more than 50% then we have a winner
+    * Otherwise we move on to Round 2
+3. Second round
+    * Call the round 2 kernel with the top 2 candidates from round 1.
+    * The same reduction in round 1 occurs but with a result array of size 2 instead.
+    * The votes are converted to percentages and printed to `stdout`
+    * Get the candidate with score >= 50% and print it as winner.
